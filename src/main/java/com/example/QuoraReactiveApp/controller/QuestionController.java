@@ -7,10 +7,7 @@ import com.example.QuoraReactiveApp.services.QuestionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 @RestController
@@ -24,5 +21,12 @@ public class QuestionController {
     public Mono<QuestionResponseDTO> createQuestion(@RequestBody QuestionRequestDTO questionRequestDTO){
         return QuestionService.createQuestion(questionRequestDTO)
                 .doOnSuccess(response-> System.out.println("Success"));
+    }
+
+    @GetMapping("/getQuestion")
+    public Mono<QuestionResponseDTO> getQuestionById(@RequestParam(name = "id") String id){
+        return QuestionService.getQuestionById(id)
+                .doOnSuccess(response -> System.out.println("Question is ready to send"))
+                .doOnError(error -> System.out.println("Error encounter in sending question from controller : "+ error));
     }
 }
