@@ -3,7 +3,9 @@ package com.example.QuoraReactiveApp.services;
 import com.example.QuoraReactiveApp.adapter.QuestionAdapter;
 import com.example.QuoraReactiveApp.dto.QuestionRequestDTO;
 import com.example.QuoraReactiveApp.dto.QuestionResponseDTO;
+import com.example.QuoraReactiveApp.event.ViewCountEvent;
 import com.example.QuoraReactiveApp.models.Question;
+import com.example.QuoraReactiveApp.producer.KafkaEventProducer;
 import com.example.QuoraReactiveApp.repositories.QuestionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -18,6 +20,7 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class QuestionService implements IQuestionService{
     private final QuestionRepository questionRepository;
+    private final KafkaEventProducer kafkaEventProducer;
 
     @Override
     public Mono<QuestionResponseDTO> createQuestion(QuestionRequestDTO question) {
@@ -39,7 +42,12 @@ public class QuestionService implements IQuestionService{
     public Mono<QuestionResponseDTO> getQuestionById(String id) {
         return questionRepository.findById(id)
                 .map(QuestionAdapter::toQuestionResponseDTO)
-                .doOnSuccess(response -> System.out.println("Question fetched successfully : " + response))
+                .doOnSuccess(response -> {
+                        System.out.println("Question fetched successfully : " + response);
+                        ViewCountEvent viewCountEvent = new ViewCountEvent(id, "question",LocalDateTime.now());
+                        kafkaEventProducer.publishViewCountEvent(viewCountEvent);
+                    }
+                )
                 .doOnError(error -> System.out.println("Fetching of question failed : " + error));
     }
 
