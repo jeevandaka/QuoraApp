@@ -2,6 +2,8 @@ package com.example.QuoraReactiveApp.controller;
 
 import com.example.QuoraReactiveApp.dto.QuestionRequestDTO;
 import com.example.QuoraReactiveApp.dto.QuestionResponseDTO;
+import com.example.QuoraReactiveApp.models.QuestionElasticDocument;
+import com.example.QuoraReactiveApp.services.IQuestionElasticService;
 import com.example.QuoraReactiveApp.services.IQuestionService;
 import com.example.QuoraReactiveApp.services.QuestionService;
 import com.example.QuoraReactiveApp.utils.CursorUtils;
@@ -13,6 +15,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -20,6 +23,7 @@ import java.time.LocalDateTime;
 public class QuestionController {
 
     private final IQuestionService QuestionService;
+    private final IQuestionElasticService questionElasticService;
 
     @PostMapping("/add")
     public Mono<QuestionResponseDTO> createQuestion(@RequestBody QuestionRequestDTO questionRequestDTO){
@@ -62,5 +66,11 @@ public class QuestionController {
         return QuestionService.searchQuestions(query,page,size)
                 .doOnError(error -> System.out.println("error"))
                 .doOnSubscribe(response -> System.out.println("subscribed at controller " + response));
+    }
+
+    @GetMapping("/elasticsearch")
+    public List<QuestionElasticDocument> searchQuestionWithElastic(@RequestParam String query){
+        System.out.println("Elastic Controller : " + query);
+        return questionElasticService.getQuestions(query);
     }
 }

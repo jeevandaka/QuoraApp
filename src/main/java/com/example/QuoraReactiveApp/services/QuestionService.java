@@ -21,19 +21,23 @@ import java.time.LocalDateTime;
 public class QuestionService implements IQuestionService{
     private final QuestionRepository questionRepository;
     private final KafkaEventProducer kafkaEventProducer;
+    private final IQuestionElasticService questionElasticService;
 
     @Override
-    public Mono<QuestionResponseDTO> createQuestion(QuestionRequestDTO question) {
+    public Mono<QuestionResponseDTO> createQuestion(QuestionRequestDTO questionRequestDTO) {
 
         Question question1 = Question.builder()
-                .title(question.getTitle())
-                .content(question.getContent())
+                .title(questionRequestDTO.getTitle())
+                .content(questionRequestDTO.getContent())
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
 
         return questionRepository.save(question1)
-                .map(QuestionAdapter::toQuestionResponseDTO)
+                .map(question -> {
+                    questionElasticService.createQuestionIndex(question);
+                    return QuestionAdapter.toQuestionResponseDTO(question);
+                })
                 .doOnSuccess(questionResponseDTO -> System.out.println("Question created successfully"))
                 .doOnError(error -> System.out.println("error creating question: " + error));
     }
